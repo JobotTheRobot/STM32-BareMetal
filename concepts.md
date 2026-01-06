@@ -51,7 +51,7 @@ Program Execution:
 Reset and Program Startup (Cortex-M):
 - Reset behavior:
     - On power-up/reset, the processor enters a Reset exception
-    - Reset is a special exception that halts normal execution
+    - Reset is a special exception establishes the initial execution context
     - When reset is released, execution restarts from an address defined by hardware data structures
 - Exceptions:
     - An event that changes the processor's execution context
@@ -74,3 +74,56 @@ Reset and Program Startup (Cortex-M):
         - PC is loaded from vector table entry 1
     - Execution begins at the reset handler
     - The reset handler handles system initialization and calling `main`
+
+Memory Map and Boot-Time Address Aliasing (STM32F103)
+- Flash memory
+    - Non-volatile, writable memory used to store memory
+    - On STM32F103, main Flash:
+        - Base address: 0x08000000
+        - Size: 128 KB
+    - Compiled program binary is stored in Flash
+- Boot memory aliasing
+    - The Cortex-M architecture expects a vector table at address 0x00000000
+    - On STM32, 0x00000000 is not a physical memory
+    - Instead, it is aliased to boot to one of a few memory regions, depending on boot cnfiguration
+    - Default boot mode:
+        - Flash memory at 0x08000000 is aliased to 0x00000000
+        - The same Flash contents are visible at both addresses
+    - This means placing the vector table at the beginning of Flash (0x08000000) automatically satisfies the CPU requirement that it appears at 0x00000000
+    - No code ever writes directly to 0x00000000
+    - The aliasing is handled entirely by the hardware
+
+Linker Script and Binary Layout:
+- Role of the linker:
+    - The compiler generates object files
+    - The linker:
+        - Assigns absolute addresses
+        - Lays out sections in memory
+        - Produces the final binary image
+    - Every build uses a linker script
+- Linker script purpose:
+    - Explicitly defines:
+        - Where Flash and RAM exist
+        - Where each section of the program is placed
+    - Ensures that:
+        - The vector table appears at the correct address
+        - The SP is initialized correctly
+- Memory regions:
+    - A linker script defines named memory regions (e.g. FLASH, RAM)
+    - Each region has:
+        - An origin (base address)
+        - A length (size)
+        - Access permissions (read/write/execute)
+    - Initial stack pointer:
+        - A symbol is defined at top of RAM (ORIGIN(RAM) + LENGTH(RAM))
+        - This value is placed as the first entry of the vector table
+        - On reset, hardware loads this value into SP
+    - Vector table construction:
+        - The first entries of the binary correspond to:
+            - Entry 0: Initial stack pointer
+            - Entry 1: Reset handler address
+        - The reset handler address must have bit 0 set to 1:
+            - Indicates Thumb code (required by Cortex-M)
+    - The binary placed in Flash begins with a valid vector table
+    - Due to address aliasing, this vector table is visible at 0x00000000
+    - The CPU boots correctly using these values
