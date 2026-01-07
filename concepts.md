@@ -127,3 +127,68 @@ Linker Script and Binary Layout:
     - The binary placed in Flash begins with a valid vector table
     - Due to address aliasing, this vector table is visible at 0x00000000
     - The CPU boots correctly using these values
+
+Compilation and Binary Generation
+- Compilation overview:
+    - Source code must be transformed into a binary image that can be placed into Flash memory
+    - The process consists of:
+        - Compilation (C source → object file)
+        - Linking (object file → executable with fixed memory addresses)
+        - Binary conversion (executable → raw binary)
+- Toolchain:
+    - arm-none-eabi-gcc
+        - GCC cross-compiler targeting bare-metal ARM
+        - No operating system or standard runtime assumed
+
+Compilation (source → object file):
+- Purpose:
+    - Translate C source code into machine instructions
+    - Does not assign final memory addresses
+    - `arm-none-eabi-gcc -c -g -mcpu=cortex-m3 -mthumb main.c -o main.o`
+        - -c
+            - Compile only; do not link
+        - -g
+            - Include debug symbols
+        - -mcpu=cortex-m3
+            - Specify target architecture (Cortex-M3)
+        - -mthumb
+            - Generate Thumb instructions
+            - Cortex-M processors execute Thumb-only code
+        - main.o
+            - Contains compiled instructions
+            - Not yet placed in device memory
+
+Linking (object file → ELF executable):
+- Linking purpose:
+    - Assign absolute memory addresses
+    - Lay out sections according to the linker script
+    - Produce an executable image matching the device memory map
+    - `arm-none-eabi-gcc -nostdlib -nostartfiles -Wl,-Tmemory.ld main.o -o application.elf`
+        - -Wl,
+            - Pass options directly to the linker
+        - -Tmemory.ld
+            - Specify the custom linker script
+            - Defines Flash/RAM layout and vector table placement
+        - -nostdlib
+            - Prevent linking against the C standard library
+            - No malloc, free, or OS-provided functions
+        - -nostartfiles
+            - Prevent default startup files from being linked
+            - Startup behavior is fully controlled by user-defined code
+        - application.elf
+            - Contains: Code, symbols, section metadata, debug information
+            - Suitable for debugging
+            - Not directly writable to Flash
+
+Binary Conversion (ELF → raw binary):
+- Purpose:
+    - Convert the executable into a flat binary image
+    - Remove metadata not understood by the MCU
+- Command:
+    - arm-none-eabi-objcopy -O binary application.elf application.bin
+- Result:
+    - application.bin
+        - Raw binary image
+        - Begins with the vector table
+        - Can be written directly to Flash memory
+
