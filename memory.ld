@@ -1,43 +1,53 @@
-/*  
-    Define the physical memory regions available on the MCU.
-    These numbers come from the STM32F103RB datasheet / RM0008 memory map:
-    - Flash starts at 0x08000000 and is 128 KB for STM32F103xB
-    - SRAM starts at 0x20000000 and is 20 KB for STM32F103RB
+/* 
+Define physical memory ranges of MCU (from STM32F103xB datasheet) 
+
+Origins:
+- Memory map figure/table shows:
+    - Flash starts at 0x08000000
+    - SRAM starts at 0x20000000
+
+Lengths:
+- Flash: Section 2.3.2 shows 64 or 128 KB flash options (B in name specifies 128 KB)
+- RAM: Section 2.3.4 shows 20 KB of Embedded SRAM
+
+This is a minimal  and simplified memory linker script, missing much of
+what standard scripts have. 
 */
 MEMORY
 {
     FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 128K
     RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 20K
 }
-/*
-    Linker symbol __reset_stack_pointer for top of RAM
-    On Cortex-M, the CPU loads SP from vector table entry 0 on reset.
-    Convention is to start SP at the top of RAM so the stack grows downwards.
-*/
+/* Linker symbol = top of RAM. On reset, CPU loads SP from vector table entry 0 */
 __reset_stack_pointer = ORIGIN(RAM) + LENGTH(RAM);
 
 SECTIONS
 {
-    /* Put the program code into Flash */
+    /* Place code in FLASH. This section begins at the FLASH ORIGIN. */
     .text : {
-        /* Set the initial address to 0 */
-        /* '.' is the location counter */
-        . = 0; 
-        /* First entry in vector table is the initial SP value, the last RAM address */
+        /* '.' is the location counter inside this output section */
+        . = 0;
+
+        /* Vector table entry 0: initial SP */
         LONG(__reset_stack_pointer);
-        /* Next entry in the vector table is initial PC value */
-        /* OR with 1 to set LSB to 1, for Thumb mode */
-        LONG(main | 1);
+
         /* 
-            The whole interrupt table is 332 bytes long. 
-            Cortex-M3 Core: 16 entries * 4 bytes = 64 bytes
-            STM32F103RB External Interrupts: 60 entries * 4 bytes = 240 bytes
-            Total: 64 + 240 = 304 bytes
-            Advance to that position. 
+        Vector table entry 1: reset handler address using main as reset handler.
+        '| 1' sets Thumb-state bit (the LSB) (Cortex-M uses Thumb instruction set)
         */
-        __vector_table_size = (16 + 60) * 4;
-        . = __vector_table_size;
-        /* The rest of the code */
+        LONG(main | 1);
+
+
+        /* 
+        Reserve space for 83 entries 
+            - up to 16 core exceptions defined by (ARM) 
+            - up to 67 external interrupt entries (defined by MCU)
+        
+        83 entries * 4 bytes per entry = 332 bytes 
+        */
+        . = 332;
+
+        /* Place all compiled .text (instructions) here */
         *(.text*)
-    } > FLASH /* Put the code in the Flash memory region */
+    } > FLASH
 }

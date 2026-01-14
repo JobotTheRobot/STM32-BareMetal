@@ -51,7 +51,7 @@ Program Execution:
 Reset and Program Startup (Cortex-M):
 - Reset behavior:
     - On power-up/reset, the processor enters a Reset exception
-    - Reset is a special exception establishes the initial execution context
+    - Reset is a special exception that establishes the initial execution context
     - When reset is released, execution restarts from an address defined by hardware data structures
 - Exceptions:
     - An event that changes the processor's execution context
@@ -77,7 +77,7 @@ Reset and Program Startup (Cortex-M):
 
 Memory Map and Boot-Time Address Aliasing (STM32F103)
 - Flash memory
-    - Non-volatile, writable memory used to store memory
+    - Non-volatile, writable memory used to store firmware and persistent data
     - On STM32F103, main Flash:
         - Base address: 0x08000000
         - Size: 128 KB
@@ -85,7 +85,7 @@ Memory Map and Boot-Time Address Aliasing (STM32F103)
 - Boot memory aliasing
     - The Cortex-M architecture expects a vector table at address 0x00000000
     - On STM32, 0x00000000 is not a physical memory
-    - Instead, it is aliased to boot to one of a few memory regions, depending on boot cnfiguration
+    - Instead, it is aliased to boot to one of a few memory regions, depending on boot configuration
     - Default boot mode:
         - Flash memory at 0x08000000 is aliased to 0x00000000
         - The same Flash contents are visible at both addresses
