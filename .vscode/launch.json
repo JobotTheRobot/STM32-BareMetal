@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug STM32",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "device": "STM32F103RB",
+      "executable": "output/application.elf",
+      "interface": "swd",
+      "configFiles": [
+        "board/st_nucleo_f103rb.cfg"
+      ]
+    }
+  ]
+}
