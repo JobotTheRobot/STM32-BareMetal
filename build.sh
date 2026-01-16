@@ -1,4 +1,7 @@
 #!/usr/bin/env sh
+
+mkdir -p output
+
 # Generate object file
 arm-none-eabi-gcc -c -g -mcpu=cortex-m3 -mthumb main.c -o output/main.o
 # Link the object file
