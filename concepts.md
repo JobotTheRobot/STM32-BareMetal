@@ -192,3 +192,5 @@ Binary Conversion (ELF → raw binary):
         - Begins with the vector table
         - Can be written directly to Flash memory
 
+Flashing:
+- `openocd -f interface/stlink.cfg -f target/stm32f1x.cfg -c "program output/application.bin 0x08000000 verify reset exit"`
