@@ -12,10 +12,12 @@ Lengths:
 
 This is a minimal  and simplified memory linker script, missing much of
 what standard scripts have. 
+
+This is for the application linker script, where we use the remaining 128 - 16 = 112 KB of flash
 */
 MEMORY
 {
-    FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH (rx) : ORIGIN = 0x08004000, LENGTH = 112K
     RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 20K
 }
 /* Linker symbol = top of RAM. On reset, CPU loads SP from vector table entry 0 */

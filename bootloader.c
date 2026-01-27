@@ -12,9 +12,20 @@ For every register we want to use, we need:
 This program uses:
 - RCC (to enable GPIOA clock)
 - GPIOA (configure and toggle PA5 (LED on nucleo board))
+
+This is the bootloader program, responsible for either jumping into the main program,
+or staying in the bootloader program (in this example, if button is pressed on boot)
 */
 
 #include <stdint.h>
+
+
+#define APP_BASE 0x08004000UL // shown in linker scripts (after 16KB bootloader)
+#define SRAM_BASE 0x20000000UL
+#define SRAM_SIZE (20U * 1024U)
+#define SRAM_END (SRAM_BASE + SRAM_SIZE)
+
+#define SCB_VTOR REG32(0xE000ED08UL) // Vector table offset register
 
 #define LED_PIN 5U // LED on Nucleo-F103RB is PA5
 #define BUTTON_PIN 13U // Button on Nucleo-F103RB is PC13
@@ -87,6 +98,30 @@ static void delay (volatile uint32_t n) {
     }
 }
 
+static void jump_to_app(uint32_t app_base) {
+    uint32_t app_sp = REG32(app_base + 0x0);
+    uint32_t app_pc = REG32(app_base + 0x4);
+
+    /* Validate MSP points into SRAM */
+    if (app_sp < SRAM_BASE || app_sp > SRAM_END) {
+        return; // stay in bootloader
+    }
+    /* Validate reset handler points into Flash (rough check) */
+    if ((app_pc & 0xFF000000U) != 0x08000000U) {
+        return; // stay in bootloader
+    }
+
+    __asm volatile ("cpsid i"); // disable interrupts (ARMv7-M)
+
+    SCB_VTOR = app_base; // vector table relocation (ARMv7-M)
+
+    /* Set MSP = app_sp */
+    __asm volatile ("msr msp, %0" :: "r"(app_sp) : );
+
+    /* Jump to reset handler (Thumb bit should already be set in vector[1]) */
+    ((void (*)(void))app_pc)();
+}
+
 int main(void) {
     RCC_APB2ENR |= (1U << RCC_APB2ENR_IOPAEN_BIT); // enable peripheral clock to GPIOA
     RCC_APB2ENR |= (1U << RCC_APB2ENR_IOPCEN_BIT); // enable peripheral clock to GPIOC
@@ -97,16 +132,12 @@ int main(void) {
     GPIOC_CRH &= ~(GPIO_CRH_PIN_MASK << GPIO_CRH_PIN13_SHIFT);
     GPIOC_CRH |= (GPIO_CRH_INPUT_F << GPIO_CRH_PIN13_SHIFT);
     
-    int delay_time = 200000U;
+
+    if ((GPIOC_IDR & (1U << BUTTON_PIN)) == 0) jump_to_app(APP_BASE);
+
+    int delay_time = 40000U;
 
     while(1) {
-        if (GPIOC_IDR & (1U << BUTTON_PIN)) {
-            delay_time = 200000U;
-        } 
-        else {
-            delay_time = 50000U;
-        }
-
         GPIOA_BSRR = (1U << LED_PIN); // set LED
         delay(delay_time);
 

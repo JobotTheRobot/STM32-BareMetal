@@ -192,5 +192,14 @@ Binary Conversion (ELF → raw binary):
         - Begins with the vector table
         - Can be written directly to Flash memory
 
-Flashing:
-- `openocd -f interface/stlink.cfg -f target/stm32f1x.cfg -c "program output/application.bin 0x08000000 verify reset exit"`
+Custom Bootloader:
+- Custom implementation of a bootloader
+- Memory Map
+    - Bootloader at 0x0800_0000
+    - Applicaton at 0x0800_4000 (16 KB bootloader)
+- Flash bootloader:
+    - `openocd -f interface/stlink.cfg -f target/stm32f1x.cfg \
+  -c "program output/bootloader.bin 0x08000000 verify reset exit"`
+- Flash main:
+    - `openocd -f interface/stlink.cfg -f target/stm32f1x.cfg \
+  -c "program output/main.bin 0x08004000 verify reset exit"`
