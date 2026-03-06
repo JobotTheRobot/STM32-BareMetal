@@ -17,3 +17,12 @@ arm-none-eabi-gcc -c -g -Og -Wall -Wextra -mcpu=cortex-m3 -mthumb main.c -o outp
 arm-none-eabi-gcc -nostdlib -nostartfiles -Wl,-Tmain_memory.ld output/main.o -o output/main.elf
 # Generate binary file
 arm-none-eabi-objcopy -O binary output/main.elf output/main.bin
+
+# TEST
+# ---- Build uart_target ----
+# Generate object file
+arm-none-eabi-gcc -c -g -Og -Wall -Wextra -mcpu=cortex-m3 -mthumb uart_target.c -o output/uart_target.o
+# Link the object file
+arm-none-eabi-gcc -nostdlib -nostartfiles -Wl,-Tuart_target_memory.ld output/uart_target.o -o output/uart_target.elf
+# Generate binary file
+arm-none-eabi-objcopy -O binary output/uart_target.elf output/uart_target.bin

@@ -133,7 +133,7 @@ int main(void) {
     GPIOC_CRH |= (GPIO_CRH_INPUT_F << GPIO_CRH_PIN13_SHIFT);
     
 
-    if ((GPIOC_IDR & (1U << BUTTON_PIN)) == 0) jump_to_app(APP_BASE);
+    if ((GPIOC_IDR & (1U << BUTTON_PIN))) jump_to_app(APP_BASE);
 
     int delay_time = 40000U;
 
